@@ -240,7 +240,8 @@ class LauncherState:
             sys.stderr.write("Failed to parse desktop file '{}': {!r}\n".format(filename, e))
 
     def add_app(self, app):
-        if app.command_line not in self.command_apps:
+        if app.is_desktop and app.name not in self.apps or \
+           not app.is_desktop and app.command_line not in self.command_apps:
             self.apps[app.name] = app
             self.command_apps[app.command_line] = app
 
