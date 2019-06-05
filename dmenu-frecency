@@ -2,10 +2,11 @@
 """Dmenu launcher with history sorted by frecency.
 
 Usage:
-    dmenu-frecency [--read-apps]
+    dmenu-frecency [--read-apps][--echo]
 
 Options:
     --read-apps         rereads all .desktop files.
+    --echo              echo chosen app to stdout instead of running it.
 """
 
 from docopt import docopt
@@ -268,6 +269,7 @@ class DmenuFrecency:
 
     def __init__(self, arguments):
         self.read_apps = arguments['--read-apps']
+        self.echo = arguments['--echo']
         self.load_config()
         self.state = LauncherState.load(self.config)
         assert self.state, "Failed to load state."
@@ -314,7 +316,10 @@ class DmenuFrecency:
                         name=result,
                         command_line=tuple(shlex.split(result)))
 
-        app.run()
+        if self.echo:
+            print(*app.command_line)
+        else:
+            app.run()
 
         self.state.add_visit(app)
         self.state.update_frecencies()
