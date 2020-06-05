@@ -2,11 +2,12 @@
 """Dmenu launcher with history sorted by frecency.
 
 Usage:
-    dmenu-frecency [--read-apps][--echo]
+    dmenu-frecency [--read-apps] [--echo] [--remove=APP]
 
 Options:
     --read-apps         rereads all .desktop files.
     --echo              echo chosen app to stdout instead of running it.
+    --remove=APP        removes the app APP from the list.
 """
 
 from docopt import docopt
@@ -136,7 +137,7 @@ class LauncherState:
         self.visit_count[app] += 1
         self.visits[app] = vs[-self.config['frecency-visits']:]
         self.app_last_visit = app if self.config['preselect-last-visit'] else None
-    
+
     def update_frecencies(self):
         for app in self.visits.keys():
             self.frecency_cache[app] = self.frecency(app)
@@ -253,6 +254,26 @@ class LauncherState:
         if self.app_last_visit is not None and self.app_last_visit.name not in self.apps:
             self.app_last_visit = None
 
+    def remove_app(self, app_name):
+        try:
+            app = next(app for app in self.visits.keys()
+                       if app.name == app_name)
+        except StopIteration:
+            print(f'App "{app_name}" not found.')
+            return
+
+        # Remove app from visits
+        del self.visits[app]
+        # Remove app from frecency cache if it exists there
+        try:
+            del self.frecency_cache[app]
+        except KeyError:
+            pass
+        # If app_last_visit is this app, set it to None
+        if (self.app_last_visit is not None and
+                self.app_last_visit.name == app_name):
+            self.app_last_visit = None
+
 
 class DmenuFrecency:
     CONFIG_FILENAME = os.path.join(CONFIG_DIR, 'config.json')
@@ -270,6 +291,7 @@ class DmenuFrecency:
     def __init__(self, arguments):
         self.read_apps = arguments['--read-apps']
         self.echo = arguments['--echo']
+        self.remove = arguments['--remove']
         self.load_config()
         self.state = LauncherState.load(self.config)
         assert self.state, "Failed to load state."
@@ -289,6 +311,11 @@ class DmenuFrecency:
         if self.read_apps:
             self.state.find_apps()
             self.state.clean_cache()
+            self.state.save()
+            return
+
+        if self.remove:
+            self.state.remove_app(self.remove)
             self.state.save()
             return
 
