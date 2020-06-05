@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """Dmenu launcher with history sorted by frecency.
 
 Usage:
@@ -27,13 +27,6 @@ import shlex
 
 
 CONFIG_DIR = xdg.BaseDirectory.save_config_path('dmenu-frecency')
-
-
-# Python 2 compatibility
-try:
-    FileNotFoundError
-except NameError:
-    FileNotFoundError = IOError
 
 
 class Application:
